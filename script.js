@@ -1,96 +1,125 @@
 let cart = [];
 let total = 0;
 
-function scrollToBooking() {
+/* SCROLL */
+document.getElementById("scroll-btn").addEventListener("click", () => {
     document.getElementById("services").scrollIntoView({ behavior: "smooth" });
-}
+});
 
-function addItem(name, price) {
-    cart.push({ name, price });
+/* ADD TO CART */
+document.querySelectorAll(".add-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
 
-    total += price;
+        let name = btn.dataset.name;
+        let price = Number(btn.dataset.price);
 
-    updateCart();
-}
+        let item = cart.find((c) => c.name === name);
 
-function removeItem(name, price) {
-    const index = cart.findIndex((item) => item.name === name);
+        if (item) {
+            item.qty++;
+        } else {
+            cart.push({ name, price, qty: 1 });
+        }
 
-    if (index !== -1) {
-        cart.splice(index, 1);
-        total -= price;
-    }
+        total += price;
+        renderCart();
+    });
+});
 
-    updateCart();
-}
+/* CART RENDER */
+function renderCart() {
+    let box = document.getElementById("cart-items");
+    let totalBox = document.getElementById("total");
 
-function updateCart() {
-    const cartItems = document.getElementById("cart-items");
-
-    const totalElement = document.getElementById("total");
+    box.innerHTML = "";
 
     if (cart.length === 0) {
-        cartItems.innerHTML = `
-<p class="empty">No Items Added</p>
-`;
+        box.innerHTML = "<li>No items</li>";
     } else {
-        cartItems.innerHTML = "";
-
         cart.forEach((item) => {
-            const div = document.createElement("div");
-
-            div.innerHTML = `
-<p>${item.name} - ₹${item.price}</p>
-`;
-
-            cartItems.appendChild(div);
+            let li = document.createElement("li");
+            li.textContent = `${item.name} x ${item.qty} = ₹${item.price * item.qty}`;
+            box.appendChild(li);
         });
     }
 
-    totalElement.innerText = total;
+    totalBox.innerText = total;
 }
 
-// EMAIL JS
-
+/* EMAIL JS INIT (FIXED) */
 (function () {
-    emailjs.init("YOUR_PUBLIC_KEY");
+    emailjs.send(
+        "service_86liqfh",
+        "template_grljq5b",
+        params
+    )   // ✔️ YOUR PUBLIC KEY
 })();
 
-function bookNow() {
-    const name = document.getElementById("name").value;
-    const email = document.getElementById("email").value;
-    const phone = document.getElementById("phone").value;
+/* BOOK NOW */
+document.getElementById("book-btn").addEventListener("click", () => {
 
-    if (name === "" || email === "" || phone === "") {
-        alert("Please fill all fields");
+    let name = document.getElementById("name").value;
+    let email = document.getElementById("email").value;
+    let phone = document.getElementById("phone").value;
+    let msg = document.getElementById("message");
+
+    if (!name || !email || !phone) {
+        msg.innerText = "Fill all fields";
+        msg.style.color = "red";
         return;
     }
 
-    const templateParams = {
+    let params = {
         user_name: name,
         user_email: email,
         user_phone: phone,
-        order_items: cart.map((item) => item.name).join(", "),
-        total_amount: total,
+        order_items: cart.map(i => i.name).join(", "),
+        total_amount: total
     };
 
-    emailjs
-        .send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", templateParams)
+    emailjs.send(
+        "service_86liqfh",      // ✔️ SERVICE ID
+        "template_grljq5b",     // ✔️ TEMPLATE ID
+        params
+    )
         .then(() => {
-            document.getElementById("message").innerText =
-                "Thank You For Booking the Service We will get back to you soon!";
+            msg.innerText = "Booking successful!";
+            msg.style.color = "green";
 
             cart = [];
             total = 0;
-            updateCart();
+            renderCart();
 
             document.getElementById("name").value = "";
             document.getElementById("email").value = "";
             document.getElementById("phone").value = "";
         })
-
         .catch((error) => {
             console.log(error);
-            alert("Email not sent");
+            msg.innerText = "Email failed to send";
+            msg.style.color = "red";
         });
-}
+});
+
+/* NEWSLETTER */
+document.getElementById("subscribe-btn").addEventListener("click", () => {
+
+    let name = document.getElementById("sub-name").value;
+    let email = document.getElementById("sub-email").value;
+    let msg = document.getElementById("sub-msg");
+
+    if (!name || !email) {
+        msg.innerText = "Fill all fields";
+        msg.style.color = "red";
+        return;
+    }
+
+    if (!email.includes("@")) {
+        msg.innerText = "Invalid email";
+        msg.style.color = "red";
+        return;
+    }
+
+    msg.innerText = "Subscribed successfully!";
+    msg.style.color = "green";
+});
